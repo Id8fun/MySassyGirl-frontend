@@ -137,13 +137,17 @@ export function Avatar(props) {
   const [animation, setAnimation] = useState(
     animations.find((a) => a.name === "Idle") ? "Idle" : animations[0].name // Check if Idle animation exists otherwise use first animation
   );
+  const [animationFixed, setAnimationFixed] = useState(false);
+  
   useEffect(() => {
-    actions[animation]
-      .reset()
-      .fadeIn(mixer.stats.actions.inUse === 0 ? 0 : 0.5)
-      .play();
-    return () => actions[animation].fadeOut(0.5);
-  }, [animation]);
+    if (animationFixed && actions[animation]) {
+      actions[animation]
+        .reset()
+        .fadeIn(mixer.stats.actions.inUse === 0 ? 0 : 0.5)
+        .play();
+      return () => actions[animation].fadeOut(0.5);
+    }
+  }, [animation, animationFixed]);
 
   const lerpMorphTarget = (target, value, speed = 0.1) => {
     scene.traverse((child) => {
@@ -166,11 +170,95 @@ export function Avatar(props) {
             set({
               [target]: value,
             });
-          } catch (e) {}
+          } catch (e) {
+            // 静默处理设置错误
+          }
         }
       }
     });
   };
+
+  // 修复PropertyBinding警告的函数
+  const fixAnimationWarnings = () => {
+    if (mixer && scene && actions) {
+      console.log('🔧 开始修复动画轨道...');
+      let removedTracksCount = 0;
+      
+      // 收集场景中所有有效的节点名称
+      const validNodeNames = new Set();
+      scene.traverse((child) => {
+        if (child.name) {
+          validNodeNames.add(child.name);
+        }
+      });
+      
+      console.log('📋 场景中的有效节点:', Array.from(validNodeNames));
+      
+      // 遍历所有动画剪辑
+      Object.values(actions).forEach(action => {
+        if (action._clip && action._clip.tracks) {
+          const originalTrackCount = action._clip.tracks.length;
+          console.log(`🎬 处理动画: ${action._clip.name}, 原始轨道数: ${originalTrackCount}`);
+          
+          // 过滤掉无效的轨道
+          action._clip.tracks = action._clip.tracks.filter(track => {
+            // 解析轨道名称，格式通常是 "NodeName.property"
+            const trackParts = track.name.split('.');
+            const nodeName = trackParts[0];
+            
+            // 检查节点是否存在于场景中
+            const nodeExists = validNodeNames.has(nodeName);
+            
+            // 定义明确的无效节点模式
+            const invalidPatterns = [
+              'LeftToe_End_end',
+              'RightToe_End_end', 
+              'LeftHandThumb4_end',
+              'LeftHandIndex4_end',
+              'LeftHandMiddle4_end',
+              'LeftHandRing4_end',
+              'LeftHandPinky4_end',
+              'RightHandThumb4_end',
+              'RightHandIndex4_end',
+              'RightHandMiddle4_end',
+              'RightHandRing4_end',
+              'RightHandPinky4_end',
+              'HeadTop_End_end',
+              'LeftEye_end',
+              'RightEye_end',
+              'Armature'
+            ];
+            
+            const isInvalidNode = invalidPatterns.includes(nodeName);
+            
+            if (!nodeExists || isInvalidNode) {
+              console.warn(`❌ 移除无效轨道: ${track.name} (节点: ${nodeName})`);
+              removedTracksCount++;
+              return false;
+            }
+            
+            return true;
+          });
+          
+          const removedCount = originalTrackCount - action._clip.tracks.length;
+          console.log(`✅ 动画 ${action._clip.name}: 移除了 ${removedCount} 个无效轨道，剩余 ${action._clip.tracks.length} 个轨道`);
+        }
+      });
+      
+      console.log(`🎯 总共移除了 ${removedTracksCount} 个无效轨道`);
+      setAnimationFixed(true);
+    }
+  };
+
+  // 在动画和场景都加载后修复警告
+  useEffect(() => {
+    if (mixer && scene && actions && Object.keys(actions).length > 0 && !animationFixed) {
+      // 延迟执行以确保所有节点都已加载
+      setTimeout(() => {
+        fixAnimationWarnings();
+      }, 200);
+    }
+  }, [mixer, scene, actions, animationFixed]);
 
   const [blink, setBlink] = useState(false);
   const [winkLeft, setWinkLeft] = useState(false);

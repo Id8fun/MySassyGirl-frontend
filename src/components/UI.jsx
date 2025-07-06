@@ -1,32 +1,45 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useChat } from "../hooks/useChat";
 
 export const UI = ({ hidden, ...props }) => {
   const input = useRef();
   const { chat, loading, cameraZoomed, setCameraZoomed, message } = useChat();
+  const [chatHistory, setChatHistory] = useState([]);
 
   const sendMessage = () => {
     const text = input.current.value;
-    if (!loading && !message) {
+    if (!loading && !message && text.trim()) {
+      // 添加用户消息到历史记录
+      setChatHistory(prev => [...prev, { type: 'user', text: text.trim() }]);
       chat(text);
       input.current.value = "";
     }
   };
+
+  // 监听AI回复消息
+  useEffect(() => {
+    if (message && message.text) {
+      setChatHistory(prev => {
+        // 检查是否已经添加过这条消息
+        const lastMessage = prev[prev.length - 1];
+        if (lastMessage && lastMessage.type === 'ai' && lastMessage.text === message.text) {
+          return prev;
+        }
+        return [...prev, { type: 'ai', text: message.text }];
+      });
+    }
+  }, [message]);
   if (hidden) {
     return null;
   }
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-between p-4 flex-col pointer-events-none">
-        <div className="self-start backdrop-blur-md bg-white bg-opacity-50 p-4 rounded-lg">
-          <h1 className="font-black text-xl">My Virtual GF</h1>
-          <p>I will always love you ❤️</p>
-        </div>
-        <div className="w-full flex flex-col items-end justify-center gap-4">
+      <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-between p-2 sm:p-4 flex-col pointer-events-none">
+        <div className="w-full flex flex-col items-end justify-center gap-2 sm:gap-4">
           <button
             onClick={() => setCameraZoomed(!cameraZoomed)}
-            className="pointer-events-auto bg-pink-500 hover:bg-pink-600 text-white p-4 rounded-md"
+            className="pointer-events-auto bg-pink-500 hover:bg-pink-600 text-white p-3 sm:p-4 rounded-md"
           >
             {cameraZoomed ? (
               <svg
@@ -69,7 +82,7 @@ export const UI = ({ hidden, ...props }) => {
                 body.classList.add("greenScreen");
               }
             }}
-            className="pointer-events-auto bg-pink-500 hover:bg-pink-600 text-white p-4 rounded-md"
+            className="pointer-events-auto bg-pink-500 hover:bg-pink-600 text-white p-3 sm:p-4 rounded-md"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -86,26 +99,47 @@ export const UI = ({ hidden, ...props }) => {
             </svg>
           </button>
         </div>
-        <div className="flex items-center gap-2 pointer-events-auto max-w-screen-sm w-full mx-auto">
-          <input
-            className="w-full placeholder:text-gray-800 placeholder:italic p-4 rounded-md bg-opacity-50 bg-white backdrop-blur-md"
-            placeholder="Type a message..."
-            ref={input}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                sendMessage();
-              }
-            }}
-          />
-          <button
-            disabled={loading || message}
-            onClick={sendMessage}
-            className={`bg-pink-500 hover:bg-pink-600 text-white p-4 px-10 font-semibold uppercase rounded-md ${
-              loading || message ? "cursor-not-allowed opacity-30" : ""
-            }`}
-          >
-            Send
-          </button>
+        <div className="w-full max-w-screen-sm mx-auto px-2 sm:px-0">
+          {/* 对话历史记录 - 紧贴输入框上方 */}
+          {chatHistory.length > 0 && (
+            <div className="mb-3 pointer-events-auto">
+              <div className="backdrop-blur-md bg-white bg-opacity-20 rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3 max-h-60 sm:max-h-80 overflow-y-auto">
+                {chatHistory.slice(-6).map((msg, index) => (
+                  <div key={index} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-xs sm:max-w-sm lg:max-w-md px-3 py-2 rounded-lg text-sm sm:text-base ${
+                      msg.type === 'user' 
+                        ? 'bg-pink-500 bg-opacity-80 text-white ml-4' 
+                        : 'bg-white bg-opacity-60 text-gray-800 mr-4'
+                    }`}>
+                      <div className="break-words">{msg.text}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* 输入框区域 */}
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <input
+              className="w-full placeholder:text-gray-800 placeholder:italic p-3 sm:p-4 rounded-md bg-opacity-50 bg-white backdrop-blur-md text-sm sm:text-base"
+              placeholder="Type a message..."
+              ref={input}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  sendMessage();
+                }
+              }}
+            />
+            <button
+              disabled={loading || message}
+              onClick={sendMessage}
+              className={`bg-pink-500 hover:bg-pink-600 text-white p-3 sm:p-4 px-6 sm:px-10 font-semibold uppercase rounded-md text-xs sm:text-sm ${
+                loading || message ? "cursor-not-allowed opacity-30" : ""
+              }`}
+            >
+              Send
+            </button>
+          </div>
         </div>
       </div>
     </>
