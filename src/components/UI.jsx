@@ -126,6 +126,7 @@ export const UI = ({ hidden, isMobile, ...props }) => {
               ref={input}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
+                  e.preventDefault();
                   sendMessage();
                 }
               }}

@@ -119,11 +119,15 @@ export function Avatar(props) {
     console.log(message);
     if (!message) {
       setAnimation("Idle");
+      setFacialExpression("default");
+      setLipsync(null);
       return;
     }
-    setAnimation(message.animation);
-    setFacialExpression(message.facialExpression);
-    setLipsync(message.lipsync);
+    
+    // 安全设置动画和表情
+    setAnimation(message.animation || "Idle");
+    setFacialExpression(message.facialExpression || "default");
+    setLipsync(message.lipsync || null);
     
     if (message.audio) {
       try {
@@ -159,13 +163,26 @@ export function Avatar(props) {
   
   useEffect(() => {
     if (animationFixed && actions[animation]) {
+      // 停止当前播放的动画
+      Object.values(actions).forEach(action => {
+        if (action.isRunning()) {
+          action.fadeOut(0.5);
+        }
+      });
+      
+      // 播放新动画
       actions[animation]
         .reset()
         .fadeIn(mixer.stats.actions.inUse === 0 ? 0 : 0.5)
         .play();
+      
       return () => {
-        if (actions[animation]) {
-          actions[animation].fadeOut(0.5);
+        if (actions[animation] && actions[animation].fadeOut) {
+          try {
+            actions[animation].fadeOut(0.5);
+          } catch (error) {
+            console.warn('Animation fadeOut error:', error);
+          }
         }
       };
     }
@@ -311,18 +328,25 @@ export function Avatar(props) {
     }
 
     const appliedMorphTargets = [];
-    if (message && lipsync && audio && !audio.paused && !audio.ended) {
-      const currentAudioTime = audio.currentTime;
-      for (let i = 0; i < lipsync.mouthCues.length; i++) {
-        const mouthCue = lipsync.mouthCues[i];
-        if (
-          currentAudioTime >= mouthCue.start &&
-          currentAudioTime <= mouthCue.end
-        ) {
-          appliedMorphTargets.push(corresponding[mouthCue.value]);
-          lerpMorphTarget(corresponding[mouthCue.value], 1, 0.2);
-          break;
+    if (message && lipsync && lipsync.mouthCues && audio && !audio.paused && !audio.ended) {
+      try {
+        const currentAudioTime = audio.currentTime;
+        for (let i = 0; i < lipsync.mouthCues.length; i++) {
+          const mouthCue = lipsync.mouthCues[i];
+          if (
+            currentAudioTime >= mouthCue.start &&
+            currentAudioTime <= mouthCue.end
+          ) {
+            const morphTarget = corresponding[mouthCue.value];
+            if (morphTarget) {
+              appliedMorphTargets.push(morphTarget);
+              lerpMorphTarget(morphTarget, 1, 0.2);
+            }
+            break;
+          }
         }
+      } catch (error) {
+        console.warn('Lipsync processing error:', error);
       }
     }
 
