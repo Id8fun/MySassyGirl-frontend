@@ -1,0 +1,26 @@
+{
+  "name": "MySassyGirl - AI虚拟女友",
+  "short_name": "MySassyGirl",
+  "description": "AI虚拟女友聊天应用，提供3D互动体验",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ff6b9d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/mysassygirl.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "social"],
+  "lang": "zh-CN",
+  "scope": "/"
+}

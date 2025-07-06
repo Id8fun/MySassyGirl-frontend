@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# 禁止爬取模型和动画文件
+Disallow: /models/
+Disallow: /animations/
+
+# 站点地图
+Sitemap: https://mysassygirl.pages.dev/sitemap.xml
+
+# 爬取延迟（毫秒）
+Crawl-delay: 1
