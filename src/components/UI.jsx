@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useChat } from "../hooks/useChat";
 
-export const UI = ({ hidden, ...props }) => {
+export const UI = ({ hidden, isMobile, ...props }) => {
   const input = useRef();
   const { chat, loading, cameraZoomed, setCameraZoomed, message } = useChat();
   const [chatHistory, setChatHistory] = useState([]);
@@ -35,11 +35,11 @@ export const UI = ({ hidden, ...props }) => {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-between p-2 sm:p-4 flex-col pointer-events-none">
-        <div className="w-full flex flex-col items-end justify-center gap-2 sm:gap-4">
+      <div className={`fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-between ${isMobile ? 'p-1' : 'p-2 sm:p-4'} flex-col pointer-events-none`}>
+        <div className={`w-full flex flex-col items-end justify-center ${isMobile ? 'gap-1' : 'gap-2 sm:gap-4'}`}>
           <button
             onClick={() => setCameraZoomed(!cameraZoomed)}
-            className="pointer-events-auto bg-pink-500 hover:bg-pink-600 text-white p-3 sm:p-4 rounded-md"
+            className={`pointer-events-auto bg-pink-500 hover:bg-pink-600 text-white ${isMobile ? 'p-2' : 'p-3 sm:p-4'} rounded-md touch-manipulation`}
           >
             {cameraZoomed ? (
               <svg
@@ -82,7 +82,7 @@ export const UI = ({ hidden, ...props }) => {
                 body.classList.add("greenScreen");
               }
             }}
-            className="pointer-events-auto bg-pink-500 hover:bg-pink-600 text-white p-3 sm:p-4 rounded-md"
+            className={`pointer-events-auto bg-pink-500 hover:bg-pink-600 text-white ${isMobile ? 'p-2' : 'p-3 sm:p-4'} rounded-md touch-manipulation`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -99,14 +99,14 @@ export const UI = ({ hidden, ...props }) => {
             </svg>
           </button>
         </div>
-        <div className="w-full max-w-screen-sm mx-auto px-2 sm:px-0">
+        <div className={`w-full max-w-screen-sm mx-auto ${isMobile ? 'px-1' : 'px-2 sm:px-0'}`}>
           {/* 对话历史记录 - 紧贴输入框上方 */}
           {chatHistory.length > 0 && (
-            <div className="mb-3 pointer-events-auto">
-              <div className="backdrop-blur-md bg-white bg-opacity-20 rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3 max-h-60 sm:max-h-80 overflow-y-auto">
+            <div className={`${isMobile ? 'mb-2' : 'mb-3'} pointer-events-auto`}>
+              <div className={`backdrop-blur-md bg-white bg-opacity-20 rounded-lg ${isMobile ? 'p-2' : 'p-3 sm:p-4'} space-y-2 sm:space-y-3 ${isMobile ? 'max-h-40' : 'max-h-60 sm:max-h-80'} overflow-y-auto`}>
                 {chatHistory.slice(-6).map((msg, index) => (
                   <div key={index} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs sm:max-w-sm lg:max-w-md px-3 py-2 rounded-lg text-sm sm:text-base ${
+                    <div className={`${isMobile ? 'max-w-xs' : 'max-w-xs sm:max-w-sm lg:max-w-md'} px-3 py-2 rounded-lg ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} ${
                       msg.type === 'user' 
                         ? 'bg-pink-500 bg-opacity-80 text-white ml-4' 
                         : 'bg-white bg-opacity-60 text-gray-800 mr-4'
@@ -119,25 +119,30 @@ export const UI = ({ hidden, ...props }) => {
             </div>
           )}
           {/* 输入框区域 */}
-          <div className="flex items-center gap-2 pointer-events-auto">
+          <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-2'} pointer-events-auto`}>
             <input
-              className="w-full placeholder:text-gray-800 placeholder:italic p-3 sm:p-4 rounded-md bg-opacity-50 bg-white backdrop-blur-md text-sm sm:text-base"
-              placeholder="Type a message..."
+              className={`w-full placeholder:text-gray-800 placeholder:italic ${isMobile ? 'p-2' : 'p-3 sm:p-4'} rounded-md bg-opacity-50 bg-white backdrop-blur-md ${isMobile ? 'text-sm' : 'text-sm sm:text-base'} touch-manipulation`}
+              placeholder={isMobile ? "输入消息..." : "Type a message..."}
               ref={input}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   sendMessage();
                 }
               }}
+              // 移动端优化
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             />
             <button
               disabled={loading || message}
               onClick={sendMessage}
-              className={`bg-pink-500 hover:bg-pink-600 text-white p-3 sm:p-4 px-6 sm:px-10 font-semibold uppercase rounded-md text-xs sm:text-sm ${
+              className={`bg-pink-500 hover:bg-pink-600 text-white ${isMobile ? 'p-2 px-3' : 'p-3 sm:p-4 px-6 sm:px-10'} font-semibold uppercase rounded-md ${isMobile ? 'text-xs' : 'text-xs sm:text-sm'} touch-manipulation ${
                 loading || message ? "cursor-not-allowed opacity-30" : ""
               }`}
             >
-              Send
+              {isMobile ? "发送" : "Send"}
             </button>
           </div>
         </div>

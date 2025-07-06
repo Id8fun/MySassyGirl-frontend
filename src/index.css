@@ -10,12 +10,29 @@
 #root {
   width: 100vw;
   height: 100vh;
+  /* 防止移动端滚动 */
+  overflow: hidden;
+  /* 禁用移动端的选择和缩放 */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   margin: 0;
   background-color: #faaca8;
   background-image: linear-gradient(19deg, #faaca8 0%, #ddd6f3 100%);
+  /* 防止移动端滚动弹性效果 */
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  /* 优化移动端渲染性能 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body.greenScreen {
