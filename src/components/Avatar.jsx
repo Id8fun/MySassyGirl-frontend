@@ -124,10 +124,28 @@ export function Avatar(props) {
     setAnimation(message.animation);
     setFacialExpression(message.facialExpression);
     setLipsync(message.lipsync);
-    const audio = new Audio("data:audio/mp3;base64," + message.audio);
-    audio.play();
-    setAudio(audio);
-    audio.onended = onMessagePlayed;
+    
+    if (message.audio) {
+      try {
+        const audio = new Audio("data:audio/mp3;base64," + message.audio);
+        audio.onerror = (e) => {
+          console.error('Audio playback error:', e);
+          onMessagePlayed(); // 继续到下一条消息
+        };
+        audio.onended = onMessagePlayed;
+        audio.play().catch(e => {
+          console.error('Audio play error:', e);
+          onMessagePlayed(); // 继续到下一条消息
+        });
+        setAudio(audio);
+      } catch (error) {
+        console.error('Audio creation error:', error);
+        onMessagePlayed(); // 继续到下一条消息
+      }
+    } else {
+      // 如果没有音频，延迟后继续到下一条消息
+      setTimeout(onMessagePlayed, 2000);
+    }
   }, [message]);
 
   const { animations } = useGLTF("/models/animations.glb");
@@ -145,7 +163,11 @@ export function Avatar(props) {
         .reset()
         .fadeIn(mixer.stats.actions.inUse === 0 ? 0 : 0.5)
         .play();
-      return () => actions[animation].fadeOut(0.5);
+      return () => {
+        if (actions[animation]) {
+          actions[animation].fadeOut(0.5);
+        }
+      };
     }
   }, [animation, animationFixed]);
 
@@ -289,7 +311,7 @@ export function Avatar(props) {
     }
 
     const appliedMorphTargets = [];
-    if (message && lipsync) {
+    if (message && lipsync && audio && !audio.paused && !audio.ended) {
       const currentAudioTime = audio.currentTime;
       for (let i = 0; i < lipsync.mouthCues.length; i++) {
         const mouthCue = lipsync.mouthCues[i];

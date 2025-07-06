@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const backendUrl = import.meta.env.VITE_API_URL || "https://mysassygirl-backend-production.up.railway.app";
 
@@ -7,16 +7,35 @@ const ChatContext = createContext();
 export const ChatProvider = ({ children }) => {
   const chat = async (message) => {
     setLoading(true);
-    const data = await fetch(`${backendUrl}/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ message }),
-    });
-    const resp = (await data.json()).messages;
-    setMessages((messages) => [...messages, ...resp]);
-    setLoading(false);
+    try {
+      const data = await fetch(`${backendUrl}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message }),
+      });
+      
+      if (!data.ok) {
+        throw new Error(`HTTP error! status: ${data.status}`);
+      }
+      
+      const response = await data.json();
+      const resp = response.messages || [];
+      setMessages((messages) => [...messages, ...resp]);
+    } catch (error) {
+      console.error('Chat API error:', error);
+      // 添加错误消息到聊天中
+      setMessages((messages) => [...messages, {
+        text: "抱歉，服务器暂时无法响应，请稍后再试。",
+        audio: null,
+        lipsync: null,
+        facialExpression: "sad",
+        animation: "Idle"
+      }]);
+    } finally {
+      setLoading(false);
+    }
   };
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState();
